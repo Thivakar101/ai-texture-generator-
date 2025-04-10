@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced AI Image Generator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap">
+    <style>
+        :root {
+            /* Enhanced color palette */
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --primary-light: #EEF2FF;
+            --secondary: #EC4899;
+            --secondary-light: #FCE7F3;
+            --dark: #111827;
+            --light: #F9FAFB;
+            --gray: #9CA3AF;
+            --success: #10B981;
+            --success-light: #D1FAE5;
+            --error: #EF4444;
+            --error-light: #FEE2E2;
+            --warning: #F59E0B;
+            --info: #3B82F6;
+            
+            /* Expanded shadow system */
+            --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            
+            /* Animation values */
+            --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Spacing system */
+            --space-1: 0.25rem;
+            --space-2: 0.5rem;
+            --space-3: 0.75rem;
+            --space-4: 1rem;
+            --space-5: 1.25rem;
+            --space-6: 1.5rem;
+            --space-8: 2rem;
+            --space-10: 2.5rem;
+            --space-12: 3rem;
+            --space-16: 4rem;
+            
+            /* Border radius */
+            --radius-sm: 0.25rem;
+            --radius: 0.5rem;
+            --radius-md: 0.75rem;
+            --radius-lg: 1rem;
+            --radius-xl: 1.5rem;
+            --radius-2xl: 2rem;
+            --radius-full: 9999px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #8BC6EC 0%, #9599E2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: var(--space-4);
+            overflow-x: hidden;
+        }
+
+        .app-wrapper {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Background Elements */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .bg-shape {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: var(--radius-full);
+        }
+
+        .shape-1 {
+            width: 200px;
+            height: 200px;
+            top: 10%;
+            left: 5%;
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .shape-2 {
+            width: 300px;
+            height: 300px;
+            bottom: -100px;
+            right: -100px;
+            animation: float 20s infinite ease-in-out reverse;
+        }
+
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            top: 30%;
+            right: 10%;
+            animation: float 12s infinite ease-in-out 1s;
+        }
+
+        .shape-4 {
+            width: 100px;
+            height: 100px;
+            bottom: 10%;
+            left: 20%;
+            animation: float 10s infinite ease-in-out 0.5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(10px, -10px) rotate(5deg); }
+            50% { transform: translate(0, 20px) rotate(0deg); }
+            75% { transform: translate(-10px, 10px) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: var(--space-12);
+            padding-top: var(--space-10);
+            position: relative;
+            animation: fadeInDown 1.2s ease-out;
+        }
+
+        .header h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 800;
+            margin-bottom: var(--space-3);
+            background: linear-gradient(45deg, var(--primary) 0%, var(--secondary) 50%, var(--primary) 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 5s linear infinite;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes shine {
+            to { background-position: 200% center; }
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.9);
+            max-width: 600px;
+            margin: 0 auto;
+            font-size: clamp(1rem, 2.5vw, 1.25rem);
+            font-weight: 300;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            margin-bottom: var(--space-10);
+            transition: var(--transition);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px);
+            animation: slideUp 0.8s ease-out forwards;
+        }
+
+        .container:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .container:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .container:hover {
+            transform: translateY(-5px) scale(1.01);
+            box-shadow: 0 25px 30px -15px rgba(0, 0, 0, 0.15);
+        }
+
+        .container-header {
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
+            padding: var(--space-5) var(--space-8);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: var(--space-4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.2) 50%, rgba(255,255,255,0) 100%);
+            transform: translateX(-100%);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            100% { transform: translateX(100%); }
+        }
+
+        .container-header i {
+            font-size: 1.75rem;
+            background: rgba(255, 255, 255, 0.2);
+            height: 50px;
+            width: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .container-header h2 {
+            font-weight: 600;
+            font-size: clamp(1.25rem, 3vw, 1.5rem);
+            margin: 0;
+        }
+
+        .container-body {
+            padding: var(--space-8);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-6);
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-4);
+            margin-bottom: var(--space-4);
+        }
+
+        .form-col {
+            flex: 1 1 300px;
+        }
+
+        label {
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            transition: var(--transition-fast);
+        }
+
+        label i {
+            color: var(--primary);
+            transition: var(--transition-fast);
+        }
+
+        input[type="text"], input[type="number"] {
+            padding: var(--space-3) var(--space-4);
+            border: 2px solid #E5E7EB;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-family: inherit;
+            transition: var(--transition-fast);
+            width: 100%;
+            outline: none;
+            box-shadow: var(--shadow-xs);
+        }
+
+        input[type="text"]:hover, input[type="number"]:hover {
+            border-color: var(--gray);
+        }
+
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        .input-group input {
+            padding-right: 40px;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+            pointer-events: none;
+            transition: var(--transition-fast);
+        }
+
+        input:focus + .input-icon {
+            color: var(--primary);
+        }
+
+        /* Button Styles */
+        button {
+            padding: var(--space-4) var(--space-6);
+            background: linear-gradient(to right, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-3);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+        }
+
+        button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: var(--transition);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        button:hover::before {
+            left: 100%;
+            transition: 0.7s;
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: var (--shadow-sm);
+        }
+
+        button i {
+            font-size: 1.2rem;
+        }
+
+        .options-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+        }
+        
+        .option-pill {
+            background: white;
+            border: 1px solid #E5E7EB;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-full);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            box-shadow: var(--shadow-xs);
+        }
+        
+        .option-pill:hover, .option-pill.active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+            color: var(--primary-dark);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+        }
+
+        .option-group-title {
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: var(--space-1);
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: var(--space-3);
+            margin-bottom: var(--space-4);
+        }
+
+        .style-option {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            border-radius: var(--radius);
+            padding: var(--space-3);
+            border: 2px solid #E5E7EB;
+            transition: var(--transition-fast);
+            text-align: center;
+        }
+
+        .style-option:hover {
+            border-color: var (--primary-light);
+            background-color: var(--primary-light);
+        }
+
+        .style-option.active {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .style-option i {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-2);
+            color: var(--primary-dark);
+        }
+
+        .style-option span {
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .style-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+        }
+
+        /* Loading Animation */
+        .spinner {
+            display: none;
+            position: relative;
+            width: 40px;
+            height: 40px;
+            margin: var(--space-6) auto;
+        }
+
+        .spinner-outer, .spinner-inner {
+            position: absolute;
+            border: 4px solid transparent;
+            border-radius: 50%;
+        }
+
+        .spinner-outer {
+            width: 100%;
+            height: 100%;
+            border-top-color: var(--primary);
+            border-right-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        .spinner-inner {
+            width: 70%;
+            height: 70%;
+            border-bottom-color: var(--secondary);
+            border-left-color: var(--secondary);
+            top: 15%;
+            left: 15%;
+            animation: spin 0.8s linear infinite reverse;
+        }
+
+        /* Result Styling */
+        .result {
+            margin-top: var(--space-8);
+            padding-top: var(--space-6);
+            border-top: 1px solid #E5E7EB;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .result h3 {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            margin-bottom: var(--space-4);
+            color: var(--primary-dark);
+        }
+
+        .result h3 i {
+            color: var(--primary);
+        }
+
+        .result img {
+            max-width: 100%;
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            display: block;
+            margin: 0 auto;
+            border: 3px solid white;
+            animation: zoomIn 0.5s ease-out;
+        }
+
+        .result .error {
+            background-color: var(--error-light);
+            color: var(--error);
+            padding: var(--space-4);
+            border-radius: var(--radius);
+            font-weight: 500;
+            animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+        }
+
+        .result .success {
+            background-color: var(--success-light);
+            color: var(--success);
+            padding: var(--space-4);
+            border-radius: var(--radius);
+            font-weight: 500;
+        }
+
+        .result-meta {
+            margin-top: var(--space-4);
+            background-color: var(--primary-light);
+            border-radius: var(--radius);
+            padding: var(--space-4);
+            font-size: 0.9rem;
+        }
+        
+        .meta-item {
+            display: flex;
+            gap: var(--space-2);
+            margin-bottom: var(--space-2);
+        }
+        
+        .meta-item strong {
+            min-width: 80px;
+        }
+
+        /* Feedback toast */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-3);
+            max-width: 350px;
+        }
+
+        .toast {
+            padding: var(--space-4);
+            border-radius: var(--radius);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            box-shadow: var(--shadow-md);
+            animation: slideInRight 0.3s ease-out, fadeOut 0.5s ease-in 3s forwards;
+        }
+
+        .toast.success {
+            background-color: var(--success);
+        }
+
+        .toast.error {
+            background-color: var(--error);
+        }
+
+        .toast.info {
+            background-color: var(--info);
+        }
+
+        .toast.warning {
+            background-color: var(--warning);
+        }
+
+        .toast i {
+            font-size: 1.5rem;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+        }
+
+        .toast-message {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            opacity: 0.7;
+            transition: var(--transition-fast);
+        }
+
+        .toast-close:hover {
+            opacity: 1;
+        }
+
+        /* Feature badges */
+        .feature-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            padding: 4px 8px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            border-radius: var(--radius-full);
+            background: var(--secondary);
+            color: white;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* Gallery view */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--space-4);
+            margin-top: var(--space-6);
+        }
+
+        .gallery-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.03);
+            box-shadow: var(--shadow-md);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .gallery-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            opacity: 0;
+            transition: var(--transition-fast);
+        }
+
+        .gallery-item:hover .gallery-overlay {
+            opacity: 1;
+        }
+
+        .gallery-action {
+            width: 35px;
+            height: 35px;
+            border-radius: var(--radius-full);
+            background: white;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+
+        .gallery-action:hover {
+            background: var(--primary);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        /* Key features highlight */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: var(--space-6);
+            margin-top: var(--space-6);
+            margin-bottom: var(--space-8);
+        }
+
+        .feature-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: var(--space-3);
+            padding: var(--space-4);
+            background-color: rgba(255, 255, 255, 0.7);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: var(--radius-full);
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: var(--space-2);
+        }
+
+        .feature-title {
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: var(--space-1);
+        }
+
+        .feature-description {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        /* Tabs styling */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #E5E7EB;
+            margin-bottom: var(--space-6);
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Hide scrollbar for Firefox */
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for Chrome/Safari */
+        }
+
+        .tab {
+            padding: var(--space-3) var(--space-5);
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--gray);
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            cursor: pointer;
+            transition: var(--transition-fast);
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: var(--primary);
+        }
+
+        .tab.active {
+            color: var(--primary-dark);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab i {
+            margin-right: var(--space-2);
+        }
+
+        /* Panel content */
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            margin-left: var(--space-1);
+        }
+
+        .tooltip i {
+            color: var(--gray);
+            font-size: 0.8rem;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            border-radius: var(--radius);
+            padding: var(--space-3);
+            position: absolute;
+            z-index: 1;
+            top: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.8rem;
+            font-weight: normal;
+            box-shadow: var(--shadow-md);
+        }
+
+        .tooltip-text::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: transparent transparent var(--dark) transparent;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: var(--space-3);
+            }
+            
+            .container-header {
+                padding: var(--space-4) var(--space-5);
+            }
+            
+            .container-body {
+                padding: var(--space-5);
+            }
+            
+            .form-row {
+                flex-direction: column;
+                gap: var(--space-3);
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .header {
+                margin-bottom: var(--space-8);
+                padding-top: var(--space-6);
+            }
+
+            .style-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+
+            .style-option i {
+                font-size: 1.2rem;
+            }
+
+            .style-option span {
+                font-size: 0.7rem;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes zoomIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1); }
+        }
+        
+        @keyframes shake {
+            10%, 90% { transform: translateX(-1px); }
+            20%, 80% { transform: translateX(2px); }
+            30%, 50%, 70% { transform: translateX(-3px); }
+            40%, 60% { transform: translateX(3px); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background shapes -->
+    <div class="bg-shapes">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        <div class="bg-shape shape-3"></div>
+        <div class="bg-shape shape-4"></div>
+    </div>
+
+    <!-- Toast container for notifications -->
+    <div class="toast-container" id="toast-container">
+        <!-- Toasts will be added here dynamically -->
+    </div>
+
+    <div class="app-wrapper">
+        <header class="header">
+            <h1>Advanced AI Image Generator</h1>
+            <p>Create stunning high-quality visuals using Google's state-of-the-art AI technology</p>
+        </header>
+
+        <!-- Feature highlights -->
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-palette"></i>
+                </div>
+                <div class="feature-title">Professional Styles</div>
+                <div class="feature-description">14 unique style presets from photographic to digital art, anime to pixel art</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shapes"></i>
+                </div>
+                <div class="feature-title">Multiple Aspect Ratios</div>
+                <div class="feature-description">Square, landscape, portrait, ultrawide, and more to match your needs</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-sliders-h"></i>
+                </div>
+                <div class="feature-title">Advanced Options</div>
+                <div class="feature-description">Fine-tune quality settings for optimal results</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div class="feature-title">Built-in Gallery</div>
+                <div class="feature-description">Browse, download and share your AI-generated masterpieces</div>
+            </div>
+        </div>
+
+        <!-- Advanced Image Generation -->
+        <div class="container">
+            <div class="container-header">
+                <i class="fas fa-wand-magic-sparkles"></i>
+                <h2>Create Stunning Images</h2>
+                <span class="feature-badge"><i class="fas fa-sparkles"></i> AI</span>
+            </div>
+            <div class="container-body">
+                <!-- Tabs for organizing options -->
+                <div class="tabs">
+                    <div class="tab active" data-panel="basic-panel">
+                        <i class="fas fa-pen-fancy"></i> Basic
+                    </div>
+                    <div class="tab" data-panel="style-panel">
+                        <i class="fas fa-palette"></i> Style
+                    </div>
+                    <div class="tab" data-panel="advanced-panel">
+                        <i class="fas fa-sliders-h"></i> Advanced
+                    </div>
+                </div>
+
+                <form action="/generate" method="post" id="generate-form">
+                    <!-- Basic Panel -->
+                    <div class="panel active" id="basic-panel">
+                        <div class="form-group">
+                            <label for="prompt_generate">
+                                <i class="fas fa-keyboard"></i> Prompt
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Describe what you want in your image. Be specific and detailed.</span>
+                                </div>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" id="prompt_generate" name="prompt" placeholder="Describe the image you want to create..." required>
+                                <i class="fas fa-lightbulb input-icon"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="negative_prompt">
+                                <i class="fas fa-ban"></i> Negative Prompt (Optional)
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Elements you want to avoid in the image.</span>
+                                </div>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" id="negative_prompt" name="negative_prompt" placeholder="Elements you want to avoid...">
+                                <i class="fas fa-minus-circle input-icon"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-crop-alt"></i> Aspect Ratio
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Choose the dimensions of your image.</span>
+                                </div>
+                            </label>
+                            <div class="options-row">
+                                <div class="option-pill active" data-ratio="1:1">1:1 (Square)</div>
+                                <div class="option-pill" data-ratio="16:9">16:9 (Landscape)</div>
+                                <div class="option-pill" data-ratio="9:16">9:16 (Portrait)</div>
+                                <div class="option-pill" data-ratio="4:3">4:3 (Standard)</div>
+                                <div class="option-pill" data-ratio="3:4">3:4 (Vertical)</div>
+                                <div class="option-pill" data-ratio="21:9">21:9 (Ultrawide)</div>
+                                <input type="hidden" name="aspect_ratio" id="aspect_ratio" value="1:1">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Style Panel -->
+                    <div class="panel" id="style-panel">
+                        <div class="form-group">
+                            <div class="option-group-title">
+                                <i class="fas fa-palette"></i> 
+                                Style Presets
+                                <div class="tooltip">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span class="tooltip-text">Choose a style to guide the image generation.</span>
+                                </div>
+                            </div>
+                            <div class="style-grid">
+                                <label class="style-option" data-style="">
+                                    <i class="fas fa-star"></i>
+                                    <span>None</span>
+                                    <input type="radio" name="style_preset" value="" checked>
+                                </label>
+                                <label class="style-option" data-style="photographic">
+                                    <i class="fas fa-camera"></i>
+                                    <span>Photographic</span>
+                                    <input type="radio" name="style_preset" value="photographic">
+                                </label>
+                                <label class="style-option" data-style="digital-art">
+                                    <i class="fas fa-paint-brush"></i>
+                                    <span>Digital Art</span>
+                                    <input type="radio" name="style_preset" value="digital-art">
+                                </label>
+                                <label class="style-option" data-style="cinematic">
+                                    <i class="fas fa-film"></i>
+                                    <span>Cinematic</span>
+                                    <input type="radio" name="style_preset" value="cinematic">
+                                </label>
+                                <label class="style-option" data-style="anime">
+                                    <i class="fas fa-user-ninja"></i>
+                                    <span>Anime</span>
+                                    <input type="radio" name="style_preset" value="anime">
+                                </label>
+                                <label class="style-option" data-style="fantasy-art">
+                                    <i class="fas fa-dragon"></i>
+                                    <span>Fantasy</span>
+                                    <input type="radio" name="style_preset" value="fantasy-art">
+                                </label>
+                                <label class="style-option" data-style="neon-punk">
+                                    <i class="fas fa-bolt"></i>
+                                    <span>Neon Punk</span>
+                                    <input type="radio" name="style_preset" value="neon-punk">
+                                </label>
+                                <label class="style-option" data-style="comic-book">
+                                    <i class="fas fa-book-open"></i>
+                                    <span>Comic Book</span>
+                                    <input type="radio" name="style_preset" value="comic-book">
+                                </label>
+                                <label class="style-option" data-style="isometric">
+                                    <i class="fas fa-cube"></i>
+                                    <span>Isometric</span>
+                                    <input type="radio" name="style_preset" value="isometric">
+                                </label>
+                                <label class="style-option" data-style="low-poly">
+                                    <i class="fas fa-shapes"></i>
+                                    <span>Low Poly</span>
+                                    <input type="radio" name="style_preset" value="low-poly">
+                                </label>
+                                <label class="style-option" data-style="origami">
+                                    <i class="fas fa-peace"></i>
+                                    <span>Origami</span>
+                                    <input type="radio" name="style_preset" value="origami">
+                                </label>
+                                <label class="style-option" data-style="line-art">
+                                    <i class="fas fa-pencil-alt"></i>
+                                    <span>Line Art</span>
+                                    <input type="radio" name="style_preset" value="line-art">
+                                </label>
+                                <label class="style-option" data-style="watercolor">
+                                    <i class="fas fa-brush"></i>
+                                    <span>Watercolor</span>
+                                    <input type="radio" name="style_preset" value="watercolor">
+                                </label>
+                                <label class="style-option" data-style="pixel-art">
+                                    <i class="fas fa-th"></i>
+                                    <span>Pixel Art</span>
+                                    <input type="radio" name="style_preset" value="pixel-art">
+                                </label>
+                                <label class="style-option" data-style="enhance">
+                                    <i class="fas fa-magic"></i>
+                                    <span>Enhance</span>
+                                    <input type="radio" name="style_preset" value="enhance">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Panel -->
+                    <div class="panel" id="advanced-panel">
+                        <div class="form-row">
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <label for="quality">
+                                        <i class="fas fa-gem"></i> Quality
+                                        <div class="tooltip">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span class="tooltip-text">Higher quality takes longer but produces more detailed results.</span>
+                                        </div>
+                                    </label>
+                                    <div class="options-row">
+                                        <div class="option-pill active" data-quality="standard">Standard</div>
+                                        <div class="option-pill" data-quality="hd">HD</div>
+                                        <input type="hidden" name="quality" id="quality" value="standard">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-col">
+                                <div class="form-group">
+                                    <div class="feature-note">
+                                        <i class="fas fa-info-circle"></i>
+                                        <p>Images are generated with watermarking enabled for security.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="generate-btn">
+                        <i class="fas fa-wand-magic-sparkles"></i> 
+                        Generate Image
+                    </button>
+                    
+                    <div class="spinner" id="generate-spinner">
+                        <div class="spinner-outer"></div>
+                        <div class="spinner-inner"></div>
+                    </div>
+                </form>
+                
+                {% if generation_result %}
+                    <div class="result">
+                        <h3><i class="fas fa-image"></i> Generated Image</h3>
+                        {% if generation_result.image_url %}
+                            <img src="{{ generation_result.image_url }}" alt="Generated Image">
+                            
+                            <div class="options-row" style="margin-top: 1rem; justify-content: center;">
+                                <a href="{{ generation_result.image_url }}" download class="option-pill">
+                                    <i class="fas fa-download"></i> Download
+                                </a>
+                                <div class="option-pill" onclick="copyImageUrl('{{ generation_result.image_url }}')">
+                                    <i class="fas fa-link"></i> Copy Link
+                                </div>
+                            </div>
+                        {% elif generation_result.error %}
+                            <div class="error">
+                                <i class="fas fa-exclamation-triangle"></i> {{ generation_result.error }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Generations Gallery -->
+        <div class="container">
+            <div class="container-header">
+                <i class="fas fa-images"></i>
+                <h2>Your Gallery</h2>
+            </div>
+            <div class="container-body">
+                <div class="gallery" id="gallery">
+                    <!-- Images will be loaded dynamically -->
+                    <div style="grid-column: 1/-1; text-align: center;">Loading your creations...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                // Add active class to clicked tab
+                this.classList.add('active');
+                
+                // Hide all panels
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                // Show the panel that corresponds to the tab
+                document.getElementById(this.dataset.panel).classList.add('active');
+            });
+        });
+        
+        // Style option selection
+        document.querySelectorAll('.style-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove active class from all options
+                document.querySelectorAll('.style-option').forEach(o => o.classList.remove('active'));
+                // Add active class to clicked option
+                this.classList.add('active');
+                
+                // Find the radio input and check it
+                const radioInput = this.querySelector('input[type="radio"]');
+                if (radioInput) radioInput.checked = true;
+            });
+        });
+        
+        // Quality option selection
+        document.querySelectorAll('.option-pill[data-quality]').forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove active class from all options
+                document.querySelectorAll('.option-pill[data-quality]').forEach(o => o.classList.remove('active'));
+                // Add active class to clicked option
+                this.classList.add('active');
+                // Update hidden input value
+                document.getElementById('quality').value = this.dataset.quality;
+            });
+        });
+
+        // Show spinner during form submission
+        function showSpinner(spinnerId) {
+            document.getElementById(spinnerId).style.display = 'block';
+        }
+        
+        // Handle form submissions
+        document.getElementById('generate-form').addEventListener('submit', function() {
+            showSpinner('generate-spinner');
+        });
+        
+        // Aspect ratio selection
+        const aspectRatioOptions = document.querySelectorAll('.option-pill[data-ratio]');
+        const aspectRatioInput = document.getElementById('aspect_ratio');
+        
+        aspectRatioOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                // Remove active class from all options
+                aspectRatioOptions.forEach(o => o.classList.remove('active'));
+                // Add active class to clicked option
+                this.classList.add('active');
+                // Update hidden input value
+                aspectRatioInput.value = this.dataset.ratio;
+            });
+        });
+        
+        // Toast notification system
+        function showToast(type, title, message) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            let icon = '';
+            switch(type) {
+                case 'success': icon = 'fa-circle-check'; break;
+                case 'error': icon = 'fa-circle-exclamation'; break;
+                case 'info': icon = 'fa-circle-info'; break;
+                case 'warning': icon = 'fa-triangle-exclamation'; break;
+                default: icon = 'fa-circle-info';
+            }
+            
+            toast.innerHTML = `
+                <i class="fas ${icon}"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    <div class="toast-message">${message}</div>
+                </div>
+                <div class="toast-close" onclick="this.parentNode.remove()">
+                    <i class="fas fa-times"></i>
+                </div>
+            `;
+            
+            document.getElementById('toast-container').appendChild(toast);
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+        
+        // Copy image URL to clipboard
+        function copyImageUrl(url) {
+            const fullUrl = window.location.origin + url;
+            navigator.clipboard.writeText(fullUrl)
+                .then(() => {
+                    showToast('success', 'Copied!', 'Image URL has been copied to clipboard');
+                })
+                .catch(err => {
+                    showToast('error', 'Error', 'Failed to copy URL: ' + err);
+                });
+        }
+        
+        // Load gallery images
+        function loadGallery() {
+            const gallery = document.getElementById('gallery');
+            
+            fetch('/static/generated')
+                .then(response => {
+                    if (response.ok) {
+                        return response.json();
+                    }
+                    throw new Error('Failed to load gallery');
+                })
+                .then(data => {
+                    if (data.images && data.images.length > 0) {
+                        gallery.innerHTML = '';
+                        
+                        // Sort by date (newest first)
+                        const recentImages = data.images
+                            .sort((a, b) => new Date(b.created) - new Date(a.created));
+                        
+                        recentImages.forEach(image => {
+                            const item = document.createElement('div');
+                            item.className = 'gallery-item';
+                            
+                            item.innerHTML = `
+                                <img src="/static/generated/${image.filename}" alt="${image.prompt || 'AI generated image'}">
+                                <div class="gallery-overlay">
+                                    <div class="gallery-action" onclick="window.open('/static/generated/${image.filename}', '_blank')">
+                                        <i class="fas fa-expand"></i>
+                                    </div>
+                                    <div class="gallery-action" onclick="copyImageUrl('/static/generated/${image.filename}')">
+                                        <i class="fas fa-link"></i>
+                                    </div>
+                                    <a class="gallery-action" href="/static/generated/${image.filename}" download>
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                </div>
+                            `;
+                            
+                            gallery.appendChild(item);
+                        });
+                    } else {
+                        gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">No images found. Generate some!</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading gallery:', error);
+                    gallery.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--error);">Failed to load gallery. Please try again later.</div>';
+                });
+        }
+        
+        // Initialize gallery and manage flash messages
+        document.addEventListener('DOMContentLoaded', function() {
+            // Load gallery
+            loadGallery();
+            
+            // Flash messages from Flask
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        showToast('{{ category }}', '{{ category|title }}', '{{ message }}');
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        });
+    </script>
+</body>
+</html>
