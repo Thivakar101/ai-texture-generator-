@@ -92,33 +92,63 @@ def generate_image_requests(prompt, output_filename="generated_image_req.png"):
             return None
 
         # --- CRITICAL: Extract Image Data ---
-        # This path depends HEAVILY on the actual response structure from Imagen 3.
-        # Inspect the 'Full API Response JSON' output carefully!
-        # Common patterns include:
-        # - response_json['predictions'][0]['bytesBase64Encoded']
-        # - response_json['predictions'][0]['imageBytes']
-        # - response_json['predictions'][0]['image']['bytesBase64Encoded']
-        # - response_json['predictions'][0] might itself be the base64 string
         try:
-            # *** ADJUST THIS LINE BASED ON ACTUAL RESPONSE ***
-            image_b64_data = response_json['predictions'][0]['bytesBase64Encoded']
-            print("Successfully extracted base64 image data.")
+            # Try different possible paths for the image data
+            if 'predictions' in response_json and response_json['predictions']:
+                if isinstance(response_json['predictions'][0], dict):
+                    if 'bytesBase64Encoded' in response_json['predictions'][0]:
+                        image_b64_data = response_json['predictions'][0]['bytesBase64Encoded']
+                    elif 'imageBytes' in response_json['predictions'][0]:
+                        image_b64_data = response_json['predictions'][0]['imageBytes']
+                    elif 'image' in response_json['predictions'][0] and isinstance(response_json['predictions'][0]['image'], dict):
+                        image_b64_data = response_json['predictions'][0]['image'].get('bytesBase64Encoded')
+                    else:
+                        # The prediction might directly be the base64 string
+                        image_b64_data = response_json['predictions'][0]
+                else:
+                    # In case the prediction is directly the base64 string
+                    image_b64_data = response_json['predictions'][0]
+            else:
+                raise KeyError("Could not find 'predictions' key in response")
+                
+            print("Successfully extracted image data.")
         except (KeyError, IndexError, TypeError) as e:
-            print(f"Error extracting image data from JSON path ['predictions'][0]['bytesBase64Encoded']: {e}")
+            print(f"Error extracting image data from response: {e}")
             print("Please inspect the 'Full API Response JSON' above and update the extraction logic.")
             return None
 
-        # Decode base64 and save
+        # Decode base64 and process the image to ensure it's rectangular with no gaps
         try:
+            import io
+            from PIL import Image
+            import numpy as np
+            
+            # Decode base64 to image
             image_bytes = base64.b64decode(image_b64_data)
-            with open(output_filename, "wb") as f:
-                f.write(image_bytes)
-            print(f"Image successfully decoded and saved to {output_filename}")
+            image_stream = io.BytesIO(image_bytes)
+            image = Image.open(image_stream)
+            
+            # Convert to RGBA to handle transparency
+            if image.mode != "RGBA":
+                image = image.convert("RGBA")
+            
+            # Create a new opaque background image
+            width, height = image.size
+            background = Image.new("RGBA", (width, height), (255, 255, 255, 255))
+            
+            # Composite the potentially transparent image onto the solid background
+            composite = Image.alpha_composite(background, image)
+            
+            # Convert back to RGB (removing alpha channel)
+            final_image = composite.convert("RGB")
+            
+            # Save the image
+            final_image.save(output_filename, format="PNG")
+            print(f"Image successfully processed and saved as a full rectangle to {output_filename}")
             return output_filename # Return filename on success
-        except (base64.binascii.Error, TypeError) as e:
-            print(f"Error decoding base64 data: {e}")
+        except Exception as e:
+            print(f"Error processing image: {e}")
             return None
-
 
     except requests.exceptions.Timeout:
         print(f"Error: API request timed out after 120 seconds.")
@@ -164,13 +194,16 @@ def generate_texture():
     if not output_filename.endswith('.png') or any(c in output_filename for c in "<>:\"/\\|?*"):
         return jsonify({"error": "Invalid output filename."}), 400
 
+    # Enhance prompt to ensure full rectangular texture with no rounded corners or gaps
+    enhanced_prompt = f"{prompt}, seamless tileable texture, full rectangular format, no rounded corners, no borders, no black spaces, no gaps, filling entire frame, high-resolution, flat texture"
+    
     # Ensure the output directory exists
     output_dir = os.path.join(os.path.dirname(__file__), "generated")
     os.makedirs(output_dir, exist_ok=True)
     output_filepath = os.path.join(output_dir, output_filename)
 
-    # Call the existing generate_image_requests function
-    saved_file = generate_image_requests(prompt, output_filepath)
+    # Call the generate_image_requests function with enhanced prompt
+    saved_file = generate_image_requests(enhanced_prompt, output_filepath)
 
     if saved_file:
         return jsonify({"file_path": os.path.abspath(saved_file)})
