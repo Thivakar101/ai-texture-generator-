@@ -18,7 +18,7 @@ class GenerateTextureOperator(bpy.types.Operator):
     bl_idname = "object.generate_texture"
     bl_label = "Generate Texture"
 
-    # Define the property correctly
+    # Define the property correctlyyyyy
     texture_type = bpy.props.StringProperty(name="Texture Type", default="metal")
 
     def execute(self, context):
